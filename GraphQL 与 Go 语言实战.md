@@ -1,11 +1,11 @@
-# go-tutorials
-
-If you do not arrange your micro services carefully, they are nothing more than expensive remote procedure calls.
-
-Micro services do not necessarily decouple logic.
-
 《GraphQL 与 Go 语言实战》
 这本书会专注与分享作者在工作中对 GraphQL 技术结合 Go 语言的使用。本书着重于 GraphQL 技术的使用以及 API 设计，不会讲解如何实现 GraphQL 语言的解析器。本书也不会着重于 Go 语言的讲解。会用到基本的 Go 语言语法，但是很简单，即使没有使用过 Go 的读者也可以轻松理解。
+
+读者范围：希望学习 GraphQL 的职业软件工程师或者计算机科学、软件工程在读学生。有 2 年以上编程经验。
+
+阅读顺序：
+- 对于经验较丰富的读者，可以从自己喜欢的章节开始。每一章的知识点是相关的，但是没有必然的前后关系。
+- 对于初学者，从第一章开始。
 
 ### GraphQL
 1. 简介
@@ -45,16 +45,17 @@ Micro services do not necessarily decouple logic.
   - 4.3. What is a data API?
   - 4.4. What is a Backend For Frontend?
 5. Go 语言加油站
-这一章会讲述 G0 语言的基本使用方法，为之后的代码实战做准备。
+这一章会讲述 G0 语言的基本使用方法，为之后的代码实战做准备。（可以推荐其他专门讲 Go 语言的书）
 - 1. 基本语法
 - 2. Interface
 - 3. 并行
 - 4. 写 Web App 会用到的标准库 (net/http)
 
-### 具体类库介绍
+6. 具体类库介绍
 Go 语言有 3 个 GraphQL 类库，我们来看看每一个的优劣。
 - 1. https://github.com/graphql-go/graphql
 - 2. https://github.com/graph-gophers/graphql-go
 - 3. https://github.com/99designs/gqlgen
-### 例子
+7. 实战代码
 这一章会展示一个完整的 Web 后端程序。
+8. 
