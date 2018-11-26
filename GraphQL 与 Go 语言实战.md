@@ -58,4 +58,8 @@ Go 语言有 3 个 GraphQL 类库，我们来看看每一个的优劣。
 - 3. https://github.com/99designs/gqlgen
 7. 实战代码
 这一章会展示一个完整的 Web 后端程序。
-8. 
+8. 思考总结
+- 1. Go 是一个合适的 GraphQL 实现语言吗？
+- 2. NodeJS or Go？
+9. 生态  
+这一章会简单谈谈 GraphQL 的开源社区以及生态系统。会讲到非 Go 语言的解决方案。比如 Apollo。但是不会深入。
