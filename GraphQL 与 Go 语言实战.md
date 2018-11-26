@@ -51,12 +51,12 @@
 - 3. 并行
 - 4. 写 Web App 会用到的标准库 (net/http)
 
-6. 具体类库介绍
+6. 具体类库介绍  
 Go 语言有 3 个 GraphQL 类库，我们来看看每一个的优劣。
 - 1. https://github.com/graphql-go/graphql
 - 2. https://github.com/graph-gophers/graphql-go
 - 3. https://github.com/99designs/gqlgen
-7. 实战代码
+7. 实战代码  
 这一章会展示一个完整的 Web 后端程序。
 8. 思考总结
 - 1. Go 是一个合适的 GraphQL 实现语言吗？
