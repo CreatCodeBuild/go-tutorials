@@ -83,6 +83,8 @@ func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expre
 			}
 			operantStack = append(operantStack, pe)
 			inc = read + 1 // todo: coordinate the current read position of tokens...
+		default:
+			fmt.Println("Warning:", t.Type(), t.Literal(), "is ignored")
 		}
 		i += inc
 	}
