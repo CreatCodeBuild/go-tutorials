@@ -1,7 +1,6 @@
 package compute
 
 import (
-	"galculator/internel/lexer"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,20 +11,9 @@ func TestCompute(t *testing.T) {
 	require.Equal(t, "-8", Compute("1 + 1 - 10"))
 	require.Equal(t, "2", Compute("1+1"))
 	require.Equal(t, "2", Compute("(1+1)"))
+	require.Equal(t, "233", Compute("233)))"))
 }
 
-func TestParseParenthesisExpression(t *testing.T) {
-	tokens1, _ := lexer.Lex("1+1")
-	tokens2, _ := lexer.Lex("1+1)")
-	require.Equal(t,
-		tokens1,
-		ParseParenthesisExpression(tokens2).Tokens,
-	)
-
-	tokens1, _ = lexer.Lex("1+(1+1)")
-	tokens2, _ = lexer.Lex("1+(1+1))")
-	require.Equal(t,
-		tokens1,
-		ParseParenthesisExpression(tokens2).Tokens,
-	)
+func TestComputeError(t *testing.T) {
+	require.Equal(t, "Parsing Error: Missing 1 ) parentheses", Compute("(1+2"))
 }

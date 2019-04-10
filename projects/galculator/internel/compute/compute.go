@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"fmt"
 	"galculator/internel/lexer"
 	"strconv"
 )
@@ -23,22 +24,23 @@ func div(left, right expression) NumberExpression {
 	return NumberExpression{number: left.Value() / right.Value()}
 }
 
-func Compute(input string) (result string) {
-
+func Compute(input string) string {
 	// Tokenization
 	tokens, err := lexer.Lex(input)
 	if err != nil {
 		return err.Error()
 	}
 
-	return strconv.FormatInt(compute(tokens), 10)
+	// Parsing
+	operatorStack, operantStack, err2 := parse(tokens)
+	if err2 != nil {
+		return err2.Error()
+	}
+
+	return strconv.FormatInt(interpreting(operatorStack, operantStack), 10)
 }
 
-func compute(tokens []lexer.Token) int64 {
-	// Parsing
-	operatorStack, operantStack := parse(tokens)
-
-	// Interpreting
+func interpreting(operatorStack []operator, operantStack []expression) int64 {
 	var operatorFunc operator
 	var left, right expression
 	for len(operatorStack) > 0 {
@@ -47,11 +49,10 @@ func compute(tokens []lexer.Token) int64 {
 		right, operantStack = operantStack[0], operantStack[1:]
 		operantStack = append([]expression{operatorFunc(left, right)}, operantStack...)
 	}
-
 	return operantStack[0].Value()
 }
 
-func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expression) {
+func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expression, err error) {
 	operators := map[lexer.Operator]operator{
 		lexer.Add: add,
 		lexer.Sub: sub,
@@ -75,9 +76,13 @@ func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expre
 			}
 			operantStack = append(operantStack, NumberExpression{number: integer})
 		case lexer.LeftParentheses:
-			pe := ParseParenthesisExpression(tokens[i+1:])
+			pe, read, err2 := ParseParenthesisExpression(tokens[i+1:])
+			if err2 != nil {
+				err = err2
+				return
+			}
 			operantStack = append(operantStack, pe)
-			inc = len(pe.Tokens) + 1 // todo: coordinate the current read position of tokens...
+			inc = read + 1 // todo: coordinate the current read position of tokens...
 		}
 		i += inc
 	}
@@ -87,7 +92,7 @@ func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expre
 // ParseParenthesisExpression parse a sequence of tokens and return the first full parenthesis expression.
 // ( 1 + 1 ) + 1 ) will return expression"((1+1)+1)"
 // This function always inserts a leading ( at the beginning of the tokens.
-func ParseParenthesisExpression(s []lexer.Token) ParenthesesExpression {
+func ParseParenthesisExpression(s []lexer.Token) (ParenthesesExpression, int, error) {
 	count := 1
 	for i, token := range s {
 		switch token.(type) {
@@ -97,10 +102,14 @@ func ParseParenthesisExpression(s []lexer.Token) ParenthesesExpression {
 			count--
 		}
 		if count == 0 {
-			return ParenthesesExpression{Tokens: s[:i]}
+			operatorStack, operantStack, err := parse(s[:i])
+			return ParenthesesExpression{
+				OperatorStack: operatorStack,
+				OperantStack:  operantStack,
+			}, i + 1, err
 		}
 	}
-	panic("incorrect syntax. todo: better syntax error reporting")
+	return ParenthesesExpression{}, len(s), &ParsingError{fmt.Sprintf("Missing %d ) parentheses", count)}
 }
 
 type expression interface {
@@ -116,9 +125,10 @@ func (ne NumberExpression) Value() int64 {
 }
 
 type ParenthesesExpression struct {
-	Tokens []lexer.Token
+	OperatorStack []operator
+	OperantStack  []expression
 }
 
 func (pe ParenthesesExpression) Value() int64 {
-	return compute(pe.Tokens)
+	return interpreting(pe.OperatorStack, pe.OperantStack)
 }

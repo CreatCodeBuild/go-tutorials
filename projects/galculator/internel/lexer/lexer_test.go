@@ -46,6 +46,21 @@ func TestLexer(t *testing.T) {
 		tokens)
 }
 
+func TestLexerWrongSyntaxValidToken(t *testing.T) {
+	// Tests in this function all have incorrect syntax but they are not abled to be caught by a finite state machine.
+	// They can only be caught at the parsing level by a context free language.
+
+	tokens, _ := Lex("((2)")
+	require.Equal(t,
+		[]Token{
+			LeftParentheses{},
+			LeftParentheses{},
+			Number{Value: "2"},
+			RightParentheses{},
+		},
+		tokens)
+}
+
 func TestLexerParenthese(t *testing.T) {
 	tokens, _ := Lex("(1+1")
 	require.Equal(t,
@@ -100,15 +115,27 @@ func TestLexerParenthese(t *testing.T) {
 func TestLexerError(t *testing.T) {
 	tokens, err := Lex("a")
 	require.Empty(t, tokens)
-	require.EqualError(t, err, "character 'a' is not expected")
+	require.EqualError(t, err, "Lexing Error: character 'a' is not expected")
 
 	_, err = Lex("1 +a")
-	require.EqualError(t, err, "character 'a' is not expected after an operator")
+	require.EqualError(t, err, "Lexing Error: character 'a' is not expected after an operator")
 	_, err = Lex("1 + function")
-	require.EqualError(t, err, "character 'f' is not expected after an operator")
+	require.EqualError(t, err, "Lexing Error: character 'f' is not expected after an operator")
 	_, err = Lex("1 + +")
-	require.EqualError(t, err, "character '+' is not expected after an operator")
+	require.EqualError(t, err, "Lexing Error: character '+' is not expected after an operator")
 
 	_, err = Lex("1 function")
-	require.EqualError(t, err, "character 'f' is not expected after a number")
+	require.EqualError(t, err, "Lexing Error: character 'f' is not expected after a number")
+
+	_, err = Lex("1+")
+	require.EqualError(t, err, "Lexing Error: An operator must be followed by an expression")
+
+	_, err = Lex("(")
+	require.EqualError(t, err, "Lexing Error: A ( must be followed by an expression")
+
+	_, err = Lex("()")
+	require.EqualError(t, err, "Lexing Error: An expression must be in between ( and )")
+
+	_, err = Lex("(()")
+	require.EqualError(t, err, "Lexing Error: An expression must be in between ( and )")
 }

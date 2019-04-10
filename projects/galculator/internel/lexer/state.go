@@ -24,9 +24,7 @@ func StateBegin(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		return StateNumber([]rune{next}), nil
 	case '+', '-', '*', '/':
-		tokens.Send(Operator{
-			Value: string(next),
-		})
+		tokens.Send(Operator{Value: string(next)})
 		return StateOperator, nil
 	case '(':
 		tokens.Send(LeftParentheses{})
@@ -37,7 +35,25 @@ func StateBegin(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 }
 
 func StateLeftParenthesis(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
-	return StateBegin, nil
+	next := r.Next()
+	switch next {
+	case ' ': // Single quote in Go is for character.
+		return StateLeftParenthesis, nil
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		return StateNumber([]rune{next}), nil
+	case '+', '-', '*', '/':
+		tokens.Send(Operator{Value: string(next)})
+		return StateOperator, nil
+	case '(':
+		tokens.Send(LeftParentheses{})
+		return StateLeftParenthesis, nil
+	case ')':
+		return nil, &Error{"An expression must be in between ( and )"}
+	case scanner.EOF:
+		return nil, &Error{"A ( must be followed by an expression"}
+	default:
+		return nil, &Error{fmt.Sprintf("character '%s' is not expected", string(next))}
+	}
 }
 
 func StateRightParentheses(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
@@ -86,9 +102,7 @@ func StateNumber(read []rune) StateFunc {
 			tokens.Send(RightParentheses{})
 			return StateRightParentheses, nil
 		case scanner.EOF:
-			tokens.Send(Number{
-				Value: string(read),
-			})
+			tokens.Send(Number{Value: string(read)})
 			return nil, nil
 		default:
 			return nil, &Error{fmt.Sprintf("character '%s' is not expected after a number", string(next))}
@@ -106,6 +120,8 @@ func StateOperator(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	case '(':
 		tokens.Send(LeftParentheses{})
 		return StateLeftParenthesis, nil
+	case scanner.EOF:
+		return nil, &Error{"An operator must be followed by an expression"}
 	default:
 		return nil, &Error{fmt.Sprintf("character '%s' is not expected after an operator", string(next))}
 	}

@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"galculator/internel/compute"
 	"os"
+	"runtime"
 )
 
-func Repl() error {
+// REPL stands for read, evaluate, print, loop.
+// It's an interactive console so to speak.
+func REPL() error {
 	buf := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
@@ -16,9 +19,14 @@ func Repl() error {
 			return err
 		}
 
-		if len(sentence) <= 2 {
+		trim := 1
+		if runtime.GOOS == "windows" {
+			trim = 2
+		}
+
+		if len(sentence) <= trim {
 			continue
 		}
-		fmt.Println(compute.Compute(string(sentence[:len(sentence)-2])))
+		fmt.Println(compute.Compute(string(sentence[:len(sentence)-trim])))
 	}
 }
