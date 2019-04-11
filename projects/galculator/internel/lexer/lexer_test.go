@@ -113,14 +113,9 @@ func TestLexerParenthese(t *testing.T) {
 }
 
 func TestLexerError(t *testing.T) {
-	tokens, err := Lex("a")
-	require.Empty(t, tokens)
-	require.EqualError(t, err, "Lexing Error: character 'a' is not expected")
-
-	_, err = Lex("1 +a")
-	require.EqualError(t, err, "Lexing Error: character 'a' is not expected after an operator")
-	_, err = Lex("1 + function")
+	_, err := Lex("1 + function")
 	require.EqualError(t, err, "Lexing Error: character 'f' is not expected after an operator")
+
 	_, err = Lex("1 + +")
 	require.EqualError(t, err, "Lexing Error: character '+' is not expected after an operator")
 
@@ -138,4 +133,65 @@ func TestLexerError(t *testing.T) {
 
 	_, err = Lex("(()")
 	require.EqualError(t, err, "Lexing Error: An expression must be in between ( and )")
+}
+
+func TestAssignment(t *testing.T) {
+	tokens, err := Lex("babcccccc = 2")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Identifier{Value: "babcccccc"},
+			EqualSign{},
+			Number{Value: "2"},
+		},
+		tokens)
+
+	tokens, err = Lex("1 +a")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Number{Value: "1"},
+			Operator{Value: "+"},
+			Identifier{Value: "a"},
+		},
+		tokens)
+
+	tokens, err = Lex("(a)")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			LeftParentheses{},
+			Identifier{Value: "a"},
+			RightParentheses{},
+		},
+		tokens)
+
+	tokens, err = Lex("(1)a")
+	require.EqualError(t, err, "Lexing Error: character 'a' is not expected after )")
+	require.Equal(t,
+		[]Token{
+			LeftParentheses{},
+			Number{Value: "1"},
+			RightParentheses{},
+		},
+		tokens)
+
+	tokens, err = Lex("a")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Identifier{Value: "a"},
+		},
+		tokens)
+
+	tokens, err = Lex("babcccccc == 2")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Identifier{Value: "babcccccc"},
+			EqualSign{},
+			EqualSign{},
+			Number{Value: "2"},
+		},
+		tokens)
 }

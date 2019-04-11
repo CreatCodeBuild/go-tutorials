@@ -49,6 +49,20 @@ func (p RightParentheses) Type() string {
 	return "Right Parentheses"
 }
 
+// Identifier is a name.
+// For example, a = 1, the identifier will be a
+type Identifier struct {
+	Value string
+}
+
+func (i Identifier) Literal() string {
+	return i.Value
+}
+
+func (i Identifier) Type() string {
+	return "Identifier"
+}
+
 var (
 	Add = Operator{
 		Value: "+",
@@ -63,3 +77,13 @@ var (
 		Value: "/",
 	}
 )
+
+type EqualSign struct{}
+
+func (i EqualSign) Literal() string {
+	return "="
+}
+
+func (i EqualSign) Type() string {
+	return "Equal Sign"
+}

@@ -25,21 +25,27 @@ func (l *ToekenReceiver) Send(t Token) {
 }
 
 type RuneEmitter struct {
-	ch chan rune
+	ch   chan rune
+	done chan struct{}
 }
 
 func NewRuneEmitter(input string) *RuneEmitter {
-	r := RuneEmitter{ch: make(chan rune)}
-	go func() {
+	r := RuneEmitter{ch: make(chan rune), done: make(chan struct{})}
+	go func(r RuneEmitter) {
 		for _, c := range input {
 			r.ch <- c
 		}
 		r.ch <- scanner.EOF
-	}()
+		close(r.done)
+	}(r)
 	return &r
 }
 
-func (r *RuneEmitter) Next() rune {
-	next := <-r.ch
-	return next
+func (r *RuneEmitter) Next() (c rune) {
+	select {
+	case <-r.done:
+		return scanner.EOF
+	case next := <-r.ch:
+		return next
+	}
 }

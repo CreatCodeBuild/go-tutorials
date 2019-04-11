@@ -12,6 +12,10 @@ func TestCompute(t *testing.T) {
 	require.Equal(t, "2", Compute("1+1"))
 	require.Equal(t, "2", Compute("(1+1)"))
 	require.Equal(t, "233", Compute("233)))"))
+	require.Equal(t, "a = 1", Compute("a = 1"))       // ?
+	require.Equal(t, "a = 4", Compute("a = (1 + 3)")) // ?
+	require.Equal(t, "a = 4", Compute("a = 1 + 3"))   // ?
+	require.Equal(t, "0", Compute("(a = 1 + 3) - 4")) // ?
 }
 
 func TestComputeError(t *testing.T) {

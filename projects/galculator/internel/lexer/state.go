@@ -29,7 +29,16 @@ func StateBegin(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	case '(':
 		tokens.Send(LeftParentheses{})
 		return StateLeftParenthesis, nil
+	case '=':
+		tokens.Send(EqualSign{})
+		return StateBegin, nil
 	default:
+		if validIdentifierRune(next) {
+			return StateIdentifier([]rune{next}), nil
+		}
+		if next == scanner.EOF {
+			fmt.Println("???")
+		}
 		return nil, &Error{fmt.Sprintf("character '%s' is not expected", string(next))}
 	}
 }
@@ -52,6 +61,9 @@ func StateLeftParenthesis(r runeEmitter, tokens tokenReciver) (StateFunc, *Error
 	case scanner.EOF:
 		return nil, &Error{"A ( must be followed by an expression"}
 	default:
+		if validIdentifierRune(next) {
+			return StateIdentifier([]rune{next}), nil
+		}
 		return nil, &Error{fmt.Sprintf("character '%s' is not expected", string(next))}
 	}
 }
@@ -74,7 +86,7 @@ func StateRightParentheses(r runeEmitter, tokens tokenReciver) (StateFunc, *Erro
 	case scanner.EOF:
 		return nil, nil
 	default:
-		return nil, &Error{fmt.Sprintf("character '%s' is not expected", string(next))}
+		return nil, &Error{fmt.Sprintf("character '%s' is not expected after )", string(next))}
 	}
 }
 
@@ -123,6 +135,32 @@ func StateOperator(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	case scanner.EOF:
 		return nil, &Error{"An operator must be followed by an expression"}
 	default:
+		if validIdentifierRune(next) {
+			return StateIdentifier([]rune{next}), nil
+		}
 		return nil, &Error{fmt.Sprintf("character '%s' is not expected after an operator", string(next))}
+	}
+}
+
+// // StateIdentifier tokenize a variable name.
+// // English letter + Chinese
+func StateIdentifier(read []rune) StateFunc {
+	return func(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
+		next := r.Next()
+		switch next {
+		case scanner.EOF:
+			tokens.Send(Identifier{Value: string(read)})
+			return nil, nil
+		case ')':
+			tokens.Send(Identifier{Value: string(read)})
+			tokens.Send(RightParentheses{})
+			return StateRightParentheses, nil
+		default:
+			if validIdentifierRune(next) {
+				return StateIdentifier(append(read, next)), nil
+			}
+			tokens.Send(Identifier{Value: string(read)})
+			return StateBegin, nil
+		}
 	}
 }

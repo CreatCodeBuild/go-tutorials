@@ -83,6 +83,9 @@ func parse(tokens []lexer.Token) (operatorStack []operator, operantStack []expre
 			}
 			operantStack = append(operantStack, pe)
 			inc = read + 1 // todo: coordinate the current read position of tokens...
+		case lexer.Identifier:
+			// todo:
+			fmt.Println("Warning:", t.Type(), t.Literal(), "is ignored")
 		default:
 			fmt.Println("Warning:", t.Type(), t.Literal(), "is ignored")
 		}
@@ -134,3 +137,22 @@ type ParenthesesExpression struct {
 func (pe ParenthesesExpression) Value() int64 {
 	return interpreting(pe.OperatorStack, pe.OperantStack)
 }
+
+// a = 1
+// Name == 'a'
+// Value == NumberExpression{1}
+//
+// a = (1+1)
+// Name == 'a'
+// Value == ParenthesesExpression{'(1+1)'}
+//
+// a = b = 1
+// a = (b = 1)
+// type AssignmentExpression struct {
+// 	Name  string
+// 	Value expression
+// }
+
+// func (ae AssignmentExpression) Value() int64 {
+// 	return ae.Value.Value()
+// }
