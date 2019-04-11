@@ -37,7 +37,7 @@ to quickly create a Cobra application.`,
 		if len(args) == 0 {
 			return errors.New("run command must have a math expression as the argument")
 		}
-		_, err := fmt.Println(compute.Compute(args[0]))
+		_, err := fmt.Println(compute.Compute(args[0], make(map[string]int64)))
 		return err
 	},
 }

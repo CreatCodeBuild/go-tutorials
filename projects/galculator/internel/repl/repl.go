@@ -12,6 +12,7 @@ import (
 // It's an interactive console so to speak.
 func REPL() error {
 	buf := bufio.NewReader(os.Stdin)
+	vm := make(map[string]int64)
 	for {
 		fmt.Print("> ")
 		sentence, err := buf.ReadBytes('\n')
@@ -27,6 +28,6 @@ func REPL() error {
 		if len(sentence) <= trim {
 			continue
 		}
-		fmt.Println(compute.Compute(string(sentence[:len(sentence)-trim])))
+		fmt.Println(compute.Compute(string(sentence[:len(sentence)-trim]), vm))
 	}
 }
