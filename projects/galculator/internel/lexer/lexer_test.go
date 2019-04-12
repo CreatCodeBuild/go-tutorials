@@ -194,4 +194,24 @@ func TestAssignment(t *testing.T) {
 			Number{Value: "2"},
 		},
 		tokens)
+
+	tokens, err = Lex("a=2")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Identifier{Value: "a"},
+			EqualSign{},
+			Number{Value: "2"},
+		},
+		tokens)
+
+	tokens, err = Lex("a+2")
+	require.Nil(t, err)
+	require.Equal(t,
+		[]Token{
+			Identifier{Value: "a"},
+			Add,
+			Number{Value: "2"},
+		},
+		tokens)
 }

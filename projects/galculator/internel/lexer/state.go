@@ -142,8 +142,8 @@ func StateOperator(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	}
 }
 
-// // StateIdentifier tokenize a variable name.
-// // English letter + Chinese
+// StateIdentifier tokenize a variable name.
+// English letter + Chinese
 func StateIdentifier(read []rune) StateFunc {
 	return func(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 		next := r.Next()
@@ -155,6 +155,14 @@ func StateIdentifier(read []rune) StateFunc {
 			tokens.Send(Identifier{Value: string(read)})
 			tokens.Send(RightParentheses{})
 			return StateRightParentheses, nil
+		case '=':
+			tokens.Send(Identifier{Value: string(read)})
+			tokens.Send(EqualSign{})
+			return StateBegin, nil
+		case '+', '-', '*', '/':
+			tokens.Send(Identifier{Value: string(read)})
+			tokens.Send(Operator{Value: string(next)})
+			return StateBegin, nil
 		default:
 			if validIdentifierRune(next) {
 				return StateIdentifier(append(read, next)), nil

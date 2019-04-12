@@ -73,6 +73,10 @@ func div(left, right expression) (ne NumberExpression, err error) {
 
 // Compute is the top level function of the interpreter.
 func Compute(input string, vm variableMap) string {
+	if vm == nil {
+		vm = make(variableMap)
+	}
+
 	// Tokenization
 	tokens, err := lexer.Lex(input)
 	if err != nil {

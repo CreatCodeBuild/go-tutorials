@@ -9,7 +9,7 @@ import (
 
 func TestParsingIdentifierExpression(t *testing.T) {
 	tokens, _ := lexer.Lex("a = 233")
-	exp, err := parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, nil)
+	exp, err := parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
 	require.NoError(t, err)
 	if ae, ok := exp.(AssignmentExpression); ok {
 		require.Equal(t, "a", ae.Name)
@@ -22,7 +22,7 @@ func TestParsingIdentifierExpression(t *testing.T) {
 	}
 
 	tokens, _ = lexer.Lex("a = 233 + 1")
-	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, nil)
+	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
 	require.NoError(t, err)
 	if ae, ok := exp.(AssignmentExpression); ok {
 		require.Equal(t, "a", ae.Name)
@@ -35,7 +35,7 @@ func TestParsingIdentifierExpression(t *testing.T) {
 	}
 
 	tokens, _ = lexer.Lex("a = 1 + 2 + 3")
-	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, nil)
+	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
 	require.NoError(t, err)
 	if ae, ok := exp.(AssignmentExpression); ok {
 		require.Equal(t, "a", ae.Name)
@@ -48,7 +48,7 @@ func TestParsingIdentifierExpression(t *testing.T) {
 	}
 
 	tokens, _ = lexer.Lex("a = 1 + (2 + 3)")
-	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, nil)
+	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
 	require.NoError(t, err)
 	if ae, ok := exp.(AssignmentExpression); ok {
 		require.Equal(t, "a", ae.Name)
@@ -60,8 +60,15 @@ func TestParsingIdentifierExpression(t *testing.T) {
 		a.FailNowf("not an assignment expression", "got %T", exp)
 	}
 
+	tokens, _ = lexer.Lex("a = a")
+	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
+	require.NoError(t, err)
+	value, err := exp.Value()
+	require.EqualError(t, err, "Variable a is not defined")
+	require.Equal(t, int64(0), value)
+
 	tokens, _ = lexer.Lex("a = (1 + 2 + a) + 3")
-	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, nil)
+	exp, err = parseIdentifierExpression(&tokenSliceEmitter{tokens: tokens[1:]}, lexer.Identifier{Value: "a"}, make(variableMap))
 	require.NoError(t, err)
 	if ae, ok := exp.(AssignmentExpression); ok {
 		require.Equal(t, "a", ae.Name)
@@ -75,9 +82,10 @@ func TestParsingIdentifierExpression(t *testing.T) {
 }
 
 func TestParsingExpression(t *testing.T) {
+
 	t.Run("parse identifier exp", func(t2 *testing.T) {
 		tokens, _ := lexer.Lex("(a)")
-		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, ParenthesesExpression{}, exp)
 		result, err := exp.Value()
@@ -87,7 +95,7 @@ func TestParsingExpression(t *testing.T) {
 
 	t.Run("parse +-*/ exp", func(t2 *testing.T) {
 		tokens, _ := lexer.Lex("1+1")
-		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, OperatorExpression{}, exp)
 		result, err := exp.Value()
@@ -95,7 +103,7 @@ func TestParsingExpression(t *testing.T) {
 		require.Equal(t, int64(2), result)
 
 		tokens, _ = lexer.Lex("1-2")
-		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, OperatorExpression{}, exp)
 		result, err = exp.Value()
@@ -103,7 +111,7 @@ func TestParsingExpression(t *testing.T) {
 		require.Equal(t, int64(-1), result)
 
 		tokens, _ = lexer.Lex("666*998")
-		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, OperatorExpression{}, exp)
 		result, err = exp.Value()
@@ -111,7 +119,7 @@ func TestParsingExpression(t *testing.T) {
 		require.Equal(t, int64(666*998), result)
 
 		tokens, _ = lexer.Lex("6/2")
-		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, OperatorExpression{}, exp)
 		result, err = exp.Value()
@@ -119,7 +127,7 @@ func TestParsingExpression(t *testing.T) {
 		require.Equal(t, int64(3), result)
 
 		tokens, _ = lexer.Lex("6/0")
-		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, OperatorExpression{}, exp)
 		result, err = exp.Value()
@@ -129,7 +137,7 @@ func TestParsingExpression(t *testing.T) {
 
 	t.Run("parse number exp", func(t2 *testing.T) {
 		tokens, _ := lexer.Lex("233")
-		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, NumberExpression{}, exp)
 
@@ -141,7 +149,7 @@ func TestParsingExpression(t *testing.T) {
 	t.Run("parse () exp", func(t2 *testing.T) {
 		tokens, _ := lexer.Lex("(233)")
 
-		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, ParenthesesExpression{}, exp)
 
@@ -151,7 +159,7 @@ func TestParsingExpression(t *testing.T) {
 
 		tokens, _ = lexer.Lex("(((100))+233+(1-100))")
 
-		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err = parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, ParenthesesExpression{}, exp)
 
@@ -163,7 +171,7 @@ func TestParsingExpression(t *testing.T) {
 	t.Run("parse = exp", func(t2 *testing.T) {
 		tokens, _ := lexer.Lex("a = 1 + 2 + 3")
 
-		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, nil)
+		exp, err := parseExpression(&tokenSliceEmitter{tokens: tokens}, make(variableMap))
 		require.NoError(t, err)
 		require.IsType(t, AssignmentExpression{}, exp)
 

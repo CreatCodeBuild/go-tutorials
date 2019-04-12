@@ -71,9 +71,11 @@ type AssignmentExpression struct {
 }
 
 func (ae AssignmentExpression) Value() (int64, error) {
+	fmt.Println(ae.vm)
+
 	v, err := ae.expression.Value()
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	ae.vm[ae.Name] = v
 	return v, nil
