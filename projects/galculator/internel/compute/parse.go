@@ -90,7 +90,7 @@ func ParseParenthesisExpression(tokens tokenEmitter, vm variableMap) (Parenthese
 // identifier EOF
 func parseIdentifierExpression(tokens tokenEmitter, identifier lexer.Identifier, vm map[string]int64) (expression, error) {
 	next := tokens.Next()
-	switch next.(type) {
+	switch token := next.(type) {
 	case lexer.EqualSign:
 		// return an assignment expression
 		exp, err := parseExpression(tokens, vm)
@@ -103,7 +103,15 @@ func parseIdentifierExpression(tokens tokenEmitter, identifier lexer.Identifier,
 			vm:         vm,
 		}, nil
 	case lexer.Operator:
-		// return normal 'exp op exp' pair
+		exp, err := parseExpression(tokens, vm)
+		if err != nil {
+			return nil, err
+		}
+		return OperatorExpression{
+			Op:    token,
+			Left:  IdentifierExpression{Name: identifier.Literal(), ValueMap: vm},
+			Right: exp,
+		}, nil
 	case nil: // EOF
 		// return the identifier itself
 		return IdentifierExpression{Name: identifier.Literal(), ValueMap: vm}, nil
