@@ -152,7 +152,7 @@ func parseExpression(tokens tokenEmitter, vm variableMap) (expression, error) {
 	case nil: // EOF
 		return nil, nil
 	case lexer.Number:
-		integer, err := strconv.ParseInt(token.Value, 10, 64)
+		integer, err := strconv.ParseInt(token.Literal(), 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func parseExpression(tokens tokenEmitter, vm variableMap) (expression, error) {
 			return OperatorExpression{Op: op, Left: np, Right: exp}, nil
 		}
 
-		return nil, errors.New("2 todo: should not reach???")
+		return nil, newParsingError("%s is not expected after %s.", next.Literal(), token.Literal())
 
 	case lexer.LeftParentheses:
 		lp, err := ParseParenthesisExpression(tokens, vm)

@@ -10,3 +10,7 @@ type ParsingError struct {
 func (e *ParsingError) Error() string {
 	return fmt.Sprintf("Parsing Error: %s", e.Message)
 }
+
+func newParsingError(format string, args ...interface{}) *ParsingError {
+	return &ParsingError{fmt.Sprintf(format, args...)}
+}
