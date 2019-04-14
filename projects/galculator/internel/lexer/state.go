@@ -23,9 +23,6 @@ func StateBegin(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 		return StateBegin, nil
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		return StateNumber([]rune{next}), nil
-	case '+', '-', '*', '/':
-		tokens.Send(Operator{Value: string(next)})
-		return StateOperator, nil
 	case '(':
 		tokens.Send(LeftParentheses{})
 		return StateLeftParenthesis, nil
@@ -36,8 +33,12 @@ func StateBegin(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 		if validIdentifierRune(next) {
 			return StateIdentifier([]rune{next}), nil
 		}
+		if validOperator(next) {
+			tokens.Send(Operator{Value: string(next)})
+			return StateOperator, nil
+		}
 		if next == scanner.EOF {
-			fmt.Println("???")
+			return nil, &Error{"StateBegin reaches EOF."}
 		}
 		return nil, &Error{fmt.Sprintf("character '%s' is not expected", string(next))}
 	}
@@ -121,6 +122,35 @@ func StateNumber(read []rune) StateFunc {
 		}
 	}
 }
+
+// // StateBeginOperatorOrNumber : when read an operator, it could be a number with a sign or an operator by its own.
+// func StateBeginOperatorOrNumber(operator rune) StateFunc {
+// 	return func(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
+
+// 		if operator == '*' || operator == '/' {
+// 			tokens.Send(Operator{Value: string(operator)})
+// 			return StateOperator, nil
+// 		}
+
+// 		next := r.Next()
+// 		switch next {
+// 		case ' ':
+// 			return StateOperator, nil
+// 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+// 			return StateNumber([]rune{next}), nil
+// 		case '(':
+// 			tokens.Send(LeftParentheses{})
+// 			return StateLeftParenthesis, nil
+// 		case scanner.EOF:
+// 			return nil, &Error{"An operator must be followed by an expression"}
+// 		default:
+// 			if validIdentifierRune(next) {
+// 				return StateIdentifier([]rune{next}), nil
+// 			}
+// 			return nil, &Error{fmt.Sprintf("character '%s' is not expected after an operator", string(next))}
+// 		}
+// 	}
+// }
 
 func StateOperator(r runeEmitter, tokens tokenReciver) (StateFunc, *Error) {
 	next := r.Next()

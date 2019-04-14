@@ -19,6 +19,10 @@ func (ne NumberExpression) Value() (int64, error) {
 	return ne.number, nil
 }
 
+// OperatorExpression is
+// exp op exp
+// If op is + or -, the first exp can be nil.
+// which means, nil + 1 is positive 1, nil - 1 is negative 1.
 type OperatorExpression struct {
 	Op    lexer.Operator
 	Left  expression
@@ -26,10 +30,18 @@ type OperatorExpression struct {
 }
 
 func (oe OperatorExpression) Value() (int64, error) {
-	lv, err2 := oe.Left.Value()
-	if err2 != nil {
-		return 0, err2
+
+	var lv int64
+	if oe.Left == nil && (oe.Op == lexer.Add || oe.Op == lexer.Sub) {
+		lv = 0
+	} else {
+		var err error
+		lv, err = oe.Left.Value()
+		if err != nil {
+			return 0, err
+		}
 	}
+
 	rv, err2 := oe.Right.Value()
 	if err2 != nil {
 		return 0, err2
@@ -71,8 +83,6 @@ type AssignmentExpression struct {
 }
 
 func (ae AssignmentExpression) Value() (int64, error) {
-	fmt.Println(ae.vm)
-
 	v, err := ae.expression.Value()
 	if err != nil {
 		return 0, err

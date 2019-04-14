@@ -20,40 +20,59 @@ func parse(tokens tokenEmitter, vm variableMap) (operatorStack []operator, opera
 		lexer.Div: div,
 	}
 
+	exp, err2 := parseExpression(tokens, vm)
+	if err2 != nil {
+		return nil, nil, err2
+	}
+	if exp == nil {
+		return
+	}
 	for next := tokens.Next(); next != nil; next = tokens.Next() {
 		switch t := next.(type) {
-		case nil:
-			return
 		case lexer.Operator:
-			if operator, ok := operators[t]; ok {
-				operatorStack = append(operatorStack, operator)
+			if _, ok := operators[t]; ok {
+				exp2, err2 := parseExpression(tokens, vm)
+				if err2 != nil {
+					return nil, nil, err2
+				}
+				exp = OperatorExpression{Left: exp, Op: t, Right: exp2}
 			} else {
 				panic("?")
 			}
 		case lexer.Number:
-			integer, err := strconv.ParseInt(t.Value, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			operantStack = append(operantStack, NumberExpression{number: integer})
+			// integer, err := strconv.ParseInt(t.Value, 10, 64)
+			// if err != nil {
+			// 	panic(err)
+			// }
+			// operantStack = append(operantStack, NumberExpression{number: integer})
+			err = &ParsingError{"a number can not follow an expression"}
+			return
 		case lexer.LeftParentheses:
-			pe, err2 := ParseParenthesisExpression(tokens, vm)
-			if err2 != nil {
-				err = err2
-				return
-			}
-			operantStack = append(operantStack, pe)
+			// pe, err2 := ParseParenthesisExpression(tokens, vm)
+			// if err2 != nil {
+			// 	err = err2
+			// 	return
+			// }
+			// operantStack = append(operantStack, pe)
+			err = &ParsingError{"a ( can not follow an expression"}
+			return
 		case lexer.Identifier:
-			exp, err2 := parseIdentifierExpression(tokens, t, vm) // todo: initt variable map elsewhere
-			if err2 != nil {
-				err = err2
-				return
-			}
-			operantStack = append(operantStack, exp)
+
+			// exp, err2 := parseIdentifierExpression(tokens, t, vm) // todo: initt variable map elsewhere
+			// if err2 != nil {
+			// 	err = err2
+			// 	return
+			// }
+			// operantStack = append(operantStack, exp)
+			err = &ParsingError{"an identifier can not follow an expression"}
+			return
 		default:
 			fmt.Println("Warning:", t.Type(), t.Literal(), "is ignored")
 		}
 	}
+
+	operantStack = append(operantStack, exp)
+
 	return
 }
 
@@ -130,6 +149,8 @@ func parseIdentifierExpression(tokens tokenEmitter, identifier lexer.Identifier,
 func parseExpression(tokens tokenEmitter, vm variableMap) (expression, error) {
 	next := tokens.Next()
 	switch token := next.(type) {
+	case nil: // EOF
+		return nil, nil
 	case lexer.Number:
 		integer, err := strconv.ParseInt(token.Value, 10, 64)
 		if err != nil {
@@ -153,10 +174,20 @@ func parseExpression(tokens tokenEmitter, vm variableMap) (expression, error) {
 		return nil, errors.New("2 todo: should not reach???")
 
 	case lexer.LeftParentheses:
-		return ParseParenthesisExpression(tokens, vm)
+		lp, err := ParseParenthesisExpression(tokens, vm)
+		return lp, err
 
 	case lexer.Identifier:
 		return parseIdentifierExpression(tokens, token, vm)
+	case lexer.Operator:
+		if token == lexer.Add || token == lexer.Sub {
+			exp, err := parseExpression(tokens, vm)
+			if err != nil {
+				return nil, err
+			}
+			return OperatorExpression{Op: token, Left: nil, Right: exp}, nil
+		}
+		return nil, &ParsingError{fmt.Sprintf("invalid operator %s here", token.Literal())}
 	}
-	return NumberExpression{number: 1}, errors.New("1 todo: should not reach")
+	return nil, errors.New("1 todo: should not reach")
 }
