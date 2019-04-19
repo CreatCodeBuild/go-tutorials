@@ -3,3 +3,4 @@ main
 .idea
 galculator/galculator
 *.exe
+*.test
