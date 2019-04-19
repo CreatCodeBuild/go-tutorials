@@ -1,6 +1,9 @@
 # Go Faster Than Anyone Else 跑得比谁都快
 
 ## 视频 Videos
+### Design Patterns
+[Concurrent Map 1](https://www.youtube.com/watch?v=_P3TV3XhzF8&t=3s)
+
 ### Beginner Level
 [YouTube English](https://www.youtube.com/playlist?list=PLwY2GJhAPWRdsMoDghEowU11FFpNHkEYX)  
 [Go Programming Language 0: Why Go?](https://www.youtube.com/watch?v=KDkPMVyB0DY&list=PLwY2GJhAPWRdsMoDghEowU11FFpNHkEYX)  
