@@ -69,7 +69,8 @@ func (ss *StringSeq) Send(obj interface{}) {
 	if !ok {
 		panic("not a string")
 	}
-	ss.strings = append(ss.strings, s)
+	ss.strings = append(ss.strings, s) // value manipulation is always not concurrent safe in Go
+	// fmt.Println(s) // stdout is
 }
 
 type sequence interface {
