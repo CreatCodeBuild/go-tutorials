@@ -27,14 +27,17 @@ func GenericMap(p genericProducer, c genericConsumer, mapper genericMapper) erro
 			if err == io.EOF {
 				break
 			} else {
-				return err // 生产者本身遇到错误，终止 Map。
+				return err // 生产者本身遇到错误，终止 Map。 The producer has an error. Shut down Map.
 			}
 		}
 		datum, err := mapper(next)
 		if err != nil {
-			return err // mapper 出了问题，终止 Map。
+			return err // mapper 出了问题，终止 Map。The mapper has an error. Shut down Map.
 		}
-		c.Send(datum)
+		err = c.Send(datum)
+		if err != nil {
+			return err // Shut down the Map immediately. This is a design decision you have to make. You can also pipe the error to a channel and collect all errors.
+		}
 	}
 	return nil
 }
@@ -55,7 +58,7 @@ func (ip *intProducer) Next() (interface{}, error) {
 type outputConsumer2 struct{}
 
 func (c outputConsumer2) Send(ele interface{}) error {
-	fmt.Println(ele)
+	fmt.Println("outputConsumer2", ele)
 	return nil
 }
 
