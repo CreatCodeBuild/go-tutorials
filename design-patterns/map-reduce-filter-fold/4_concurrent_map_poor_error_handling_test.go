@@ -2,22 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-type ErrorChannel struct {
-	Errs  chan error
-	Count int
-}
-
-func (e *ErrorChannel) Error() string {
-	return fmt.Sprintf("There are %d errors in this channel.", e.Count)
-}
 
 func ConcurrentMapPoorErrorHandling(p genericProducer, c genericConsumer, mapper genericMapper) error {
 	count := 0
