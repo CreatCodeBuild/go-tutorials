@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -44,8 +46,10 @@ func ConcurrentMapBetterErrorHandling(p genericProducer, c genericConsumer, mapp
 			if err == io.EOF {
 				break // There is no more elements in the producer.
 			}
+			// There is an error in the producer. Shut down the mapping.
+			// In some cases, you might want to keep going. We will discuss this scenario in later lectures.
 			errs <- err
-			return NewErrorChannel(errs, count+1) // There is an error in the producer. Shut down the mapping.
+			return NewErrorChannel(errs, count+1)
 		}
 		count++
 		go func(next interface{}) {
@@ -76,11 +80,93 @@ func TestConcurrentMapBetterErrorHandling(t *testing.T) {
 
 	t.Run("all producer errors", func(t2 *testing.T) {
 		results2 := outputConsumer2{}
-		err := ConcurrentMapBetterErrorHandling(errorProducer(5), &results2, func(x interface{}) (interface{}, error) {
+		err := ConcurrentMapBetterErrorHandling(errorProducer(-1, 5), &results2, func(x interface{}) (interface{}, error) {
 			return x, nil
 		})
-		require.NoError(t, err)
+		switch e := err.(type) {
+		case *ErrorChannel:
+			require.Equal(t, 1, e.Count)
+			require.EqualError(t, <-e.Errs, "producer error")
+		case nil:
+			t.FailNow()
+		default:
+			t.FailNow()
+		}
 	})
+
+	t.Run("A mapper error followed by a producer error", func(t2 *testing.T) {
+		results2 := outputConsumer2{}
+		err := ConcurrentMapBetterErrorHandling(errorProducer(0, 5), &results2, func(x interface{}) (interface{}, error) {
+			return nil, errors.New("mapper error")
+		})
+		switch e := err.(type) {
+		case *ErrorChannel:
+			require.Equal(t, 2, e.Count)
+			// The order here is undefined. It's just because we only have 2 data here,
+			// the second iteration of the Map happens to execute before the first goroutine starts.
+			require.EqualError(t, <-e.Errs, "producer error")
+			require.EqualError(t, <-e.Errs, "mapper error")
+		case nil:
+			t.FailNow()
+		default:
+			t.FailNow()
+		}
+	})
+
+	t.Run("all 3 kinds of errors", func(t2 *testing.T) {
+		err := ConcurrentMapBetterErrorHandling(errorProducer(1, 5), errorConsumer(), func(x interface{}) (interface{}, error) {
+			i := x.(int)
+			if i > 0 {
+				return nil, errors.New("mapper error")
+			}
+			return nil, nil
+		})
+		switch e := err.(type) {
+		case *ErrorChannel:
+			require.Equal(t, 3, e.Count)
+			fmt.Println(<-e.Errs)
+			fmt.Println(<-e.Errs)
+			fmt.Println(<-e.Errs)
+		case nil:
+			t.FailNow()
+		default:
+			t.FailNow()
+		}
+	})
+
+	t.Run("many errors", func(t2 *testing.T) {
+		err := ConcurrentMapBetterErrorHandling(errorProducer(998, 1000), errorConsumer(), func(x interface{}) (interface{}, error) {
+			timeToSleep := time.Duration(rand.Int() % 3000)
+			time.Sleep(timeToSleep * time.Millisecond)
+			if rand.Int()%2 == 0 {
+				return nil, fmt.Errorf("mapper error %v", x)
+			}
+			return nil, nil
+		})
+		switch e := err.(type) {
+		case *ErrorChannel:
+			require.Equal(t, 1000, e.Count)
+			for i := 0; i < e.Count; i++ {
+				fmt.Println(<-e.Errs)
+			}
+		case nil:
+			t.FailNow()
+		default:
+			t.FailNow()
+		}
+	})
+}
+
+type SendFunc func(interface{}) error
+
+func (f SendFunc) Send(i interface{}) error {
+	return f(i)
+}
+
+func errorConsumer() SendFunc {
+	return func(interface{}) error {
+		return errors.New("consumer error")
+	}
 }
 
 // type genericProducer interface {
@@ -95,12 +181,15 @@ func (f NextFunc) Next() (interface{}, error) {
 	return f()
 }
 
-func errorProducer(n int) NextFunc {
+func errorProducer(after, n int) NextFunc {
 	i := 0
 	return func() (interface{}, error) {
 		if i < n {
 			defer func() { i++ }()
-			return nil, errors.New("some random error")
+			if after < i {
+				return i, errors.New("producer error")
+			}
+			return i, nil
 		}
 		return nil, io.EOF
 	}
