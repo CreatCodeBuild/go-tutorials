@@ -25,9 +25,11 @@ func main() {
 		map[string]interface{}{"gender": true, "age": 18},
 	))
 
+	client2.Request("/orders") // http://localhost:8081/orders
+
 	c3, err := client.Subclient("/user/{id}")
 	c3.SetHeader("jwt", "xxx")
-	c3.Request().SetArg("id", 123)
+	c3.Request("/orders").SetArg("id", 123) // http://localhost:8081/user/123/orders
 
 	c4 := c3.Subclient("/orders")
 }
