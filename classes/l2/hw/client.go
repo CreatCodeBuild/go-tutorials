@@ -2,7 +2,7 @@ package hw
 
 import (
 	"net/http"
-	"time"
+	"strings"
 )
 
 // Client  A Http Client
@@ -14,9 +14,7 @@ type Client struct {
 // Request  request info of Client
 type Request struct {
 	Method, Path string
-	client       *Client
-	times        int
-	timeout      time.Duration
+	Args  map[string]string
 }
 
 // NewClient   Create a new Client
@@ -29,13 +27,24 @@ func (c *Client) Request(method string, path string) *Request {
 	return &Request{Method: method, Path: path}
 }
 
-// WithArgs   Set params of the request
+// WithArgs   Set args of the request
 func (r *Request) WithArgs(args map[string]string) *Request {
+	r.Args = args
 	return r
 }
 
 // Do   Execute http request
 func (c *Client) Do(request *Request) (*http.Response, error) {
-
-	return nil, nil
+	path := request.Path
+	for k, v := range request.Args{
+		placeholderStr := "{"+ k +"}"
+		path = strings.Replace(path, placeholderStr,v,1)
+	}
+	path = c.BaseURL + path
+	httpRequest,err := http.NewRequest(request.Method, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	res,err := c.client.Do(httpRequest)
+	return res, err
 }
