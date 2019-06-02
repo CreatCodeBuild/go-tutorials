@@ -33,6 +33,17 @@ func setup() *httptest.Server {
 		w.Write([]byte(r.URL.Query().Get("test")))
 
 	}).Methods("GET")
+
+	r.HandleFunc("/body", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			w.Write([]byte(err.Error()))
+		}
+		w.Write(body)
+
+	}).Methods("POST")
 	server := httptest.NewServer(r)
 	return server
 }
@@ -62,7 +73,9 @@ func TestV1(t *testing.T) {
 	t.Run("Challenge 3", func(t2 *testing.T) {
 		res2, err := dourequest.NewRequest("/b/{id}").
 			Method(http.MethodOptions).
-			WithArgs(map[string]string{"id": "xxx"}).Do()
+			SetArgs(map[string]string{"id": "123"}).
+			Arg("id", "xxx").
+			Do()
 		require.Equal(t, res2.StatusCode, http.StatusAccepted)
 		compareReaders(t, res2.Body, strings.NewReader("xxx"))
 		require.NoError(t, err)
@@ -83,6 +96,16 @@ func TestV1(t *testing.T) {
 			Query(url.Values{"test": []string{"ok"}}).
 			Timeout(500).
 			RetryTimes(2).
+			Do()
+		require.Equal(t, res2.StatusCode, http.StatusOK)
+		compareReaders(t, res2.Body, strings.NewReader("ok"))
+		require.NoError(t, err)
+	})
+
+	t.Run("Challenge Body", func(t2 *testing.T) {
+		res2, err := dourequest.NewRequest("/body").
+			Method(http.MethodPost).
+			Body([]byte("ok")).
 			Do()
 		require.Equal(t, res2.StatusCode, http.StatusOK)
 		compareReaders(t, res2.Body, strings.NewReader("ok"))

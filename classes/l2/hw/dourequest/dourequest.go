@@ -1,7 +1,8 @@
 package dourequest
 
 import (
-	"fmt"
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,13 +19,19 @@ type request struct {
 	path       string
 	args       map[string]string
 	query      url.Values
+	body       []byte
 	timeout    time.Duration
 	retryTimes int
 	client     *http.Client
 }
 
 func NewRequest(path string) *request {
-	r := &request{client: &http.Client{}, path: path}
+	r := &request{
+		client: &http.Client{},
+		path:   path,
+		args:   make(map[string]string),
+		query:  url.Values{},
+	}
 	r.Timeout(1000)
 	r.RetryTimes(3)
 	return r
@@ -39,13 +46,23 @@ func (r *request) Method(method string) *request {
 	return r
 }
 
-func (r *request) WithArgs(args map[string]string) *request {
+func (r *request) SetArgs(args map[string]string) *request {
 	r.args = args
+	return r
+}
+
+func (r *request) Arg(key string, value string) *request {
+	r.args[key] = value
 	return r
 }
 
 func (r *request) Query(query url.Values) *request {
 	r.query = query
+	return r
+}
+
+func (r *request) Body(body []byte) *request {
+	r.body = body
 	return r
 }
 
@@ -71,7 +88,7 @@ func (r *request) Do() (*http.Response, error) {
 	url := BaseURL + path
 
 	// Request
-	req, err := http.NewRequest(r.method, url, nil)
+	req, err := http.NewRequest(r.method, url, bytes.NewReader(r.body))
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +119,12 @@ func (r *request) doAndRetry(req *http.Request) (*http.Response, error) {
 	netErr, ok := err.(timeoutError)
 	for i := 0; ok && netErr.Timeout() && i < r.retryTimes; i++ {
 		r.client.Timeout = r.client.Timeout * 2
-		fmt.Println("Timeout RetryTimes:", i+1,
-			" Reset Timeout:", r.client.Timeout.Nanoseconds()/time.Millisecond.Nanoseconds(), "ms")
+		//fmt.Println("Timeout RetryTimes:", i+1,
+		//	" Reset Timeout:", r.client.Timeout.Nanoseconds()/time.Millisecond.Nanoseconds(), "ms")
+
+		// ContentLength Retry 没有重新创建 request,而io.Reader已经读到了末尾,导致request认为 ContentLength 为0,需要重置 body
+		// https://stackoverflow.com/questions/31337891/net-http-http-contentlength-222-with-body-length-0
+		req.Body = ioutil.NopCloser(bytes.NewReader(r.body))
 		res, err = r.client.Do(req)
 		netErr, ok = err.(timeoutError)
 	}
