@@ -1,6 +1,7 @@
 package dourequest_test
 
 import (
+	"fmt"
 	"github.com/CreatCodeBuild/go-tutorials/classes/l2/hw/dourequest"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -42,8 +43,13 @@ func setup() *httptest.Server {
 			w.Write([]byte(err.Error()))
 		}
 		w.Write(body)
-
 	}).Methods("POST")
+
+	r.HandleFunc("/query/{id}", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(time.Duration(1) * time.Second)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mux.Vars(r)["id"] + r.URL.Query().Get("test") + r.URL.Query().Get("test1")))
+	}).Methods("GET")
 	server := httptest.NewServer(r)
 	return server
 }
@@ -71,6 +77,9 @@ func TestV1(t *testing.T) {
 	})
 
 	t.Run("Challenge 3", func(t2 *testing.T) {
+		r := dourequest.NewRequest("/b/{id}")
+		req4, err := r.Do()
+		fmt.Println(req4)
 		res2, err := dourequest.NewRequest("/b/{id}").
 			Method(http.MethodOptions).
 			SetArgs(map[string]string{"id": "123"}).
@@ -91,9 +100,9 @@ func TestV1(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Challenge Query", func(t2 *testing.T) {
+	t.Run("Challenge SetQuery", func(t2 *testing.T) {
 		res2, err := dourequest.Get("/query").
-			Query(url.Values{"test": []string{"ok"}}).
+			SetQuery(url.Values{"test": []string{"ok"}}).
 			Timeout(500).
 			RetryTimes(2).
 			Do()
@@ -110,6 +119,19 @@ func TestV1(t *testing.T) {
 		require.Equal(t, res2.StatusCode, http.StatusOK)
 		compareReaders(t, res2.Body, strings.NewReader("ok"))
 		require.NoError(t, err)
+	})
+
+	t.Run("Challenge Args SetQuery", func(t2 *testing.T) {
+		res2, err := dourequest.Get("/query/{id}").
+			Arg("id", "xxx").
+			Query("test", "{test}").
+			Arg("test", "ok").
+			Query("test1", "yes").
+			Do()
+		require.Equal(t, res2.StatusCode, http.StatusOK)
+		compareReaders(t, res2.Body, strings.NewReader("xxxokyes"))
+		require.NoError(t, err)
+
 	})
 }
 

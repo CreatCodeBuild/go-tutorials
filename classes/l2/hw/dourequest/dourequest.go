@@ -56,8 +56,13 @@ func (r *request) Arg(key string, value string) *request {
 	return r
 }
 
-func (r *request) Query(query url.Values) *request {
+func (r *request) SetQuery(query url.Values) *request {
 	r.query = query
+	return r
+}
+
+func (r *request) Query(key string, value string) *request {
+	r.query.Set(key, value)
 	return r
 }
 
@@ -79,34 +84,46 @@ func (r *request) RetryTimes(times int) *request {
 
 func (r *request) Do() (*http.Response, error) {
 	// WithArgs
-	path := r.getFillArgsPath()
+	path := getFillArgsPath(r.path, r.args)
 
 	// Timeout
 	r.client.Timeout = r.timeout * time.Millisecond
 
-	// url
-	url := BaseURL + path
+	// requestUrl
+	requestUrl := BaseURL + path
 
 	// Request
-	req, err := http.NewRequest(r.method, url, bytes.NewReader(r.body))
+	req, err := http.NewRequest(r.method, requestUrl, bytes.NewReader(r.body))
 	if err != nil {
 		return nil, err
 	}
 
 	// Query
-	req.URL.RawQuery = r.query.Encode()
+	// FIXME 这么写的话,当 path 中附带了 query 参数时，就会出错了
+	rawQuery := getQueryURL(r.query.Encode(), r.args)
+	req.URL.RawQuery = rawQuery
 
 	// Do
 	return r.doAndRetry(req)
 }
 
-// 获取填充 args 后的 path
-func (r *request) getFillArgsPath() string {
-	if len(r.args) == 0 {
-		return r.path
+func getQueryURL(queryEncode string, args map[string]string) string {
+	if args == nil || len(args) < 1 {
+		return queryEncode
 	}
-	path := r.path
-	for k, v := range r.args {
+	queryEncode = strings.Replace(queryEncode, "%7B", "{", 1)
+	queryEncode = strings.Replace(queryEncode, "%7D", "}", 1)
+	rawQuery := getFillArgsPath(queryEncode, args)
+	return rawQuery
+}
+
+// 获取填充 args 后的 path
+func getFillArgsPath(path string, args map[string]string) string {
+	if len(args) == 0 {
+		return path
+	}
+	// TODO 有待优化
+	for k, v := range args {
 		placeholderStr := "{" + k + "}"
 		path = strings.Replace(path, placeholderStr, v, 1)
 	}
