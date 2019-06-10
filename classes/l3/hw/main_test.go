@@ -1,13 +1,12 @@
-package test
+package hw
 
 import (
+	"hw/hw/biglog"
 	"strings"
 
 	"testing"
 	
 	"github.com/stretchr/testify/require"
-
-	"hw/biglog" // You need to implement a biglog package.
 )
 
 // In this challenge, you need to implement a log system. It basically has 2 API, one for log and another for search.
@@ -20,7 +19,7 @@ func TestChallenge1(t *testing.T) {
 	// Question:
 	//		Should it accept io.ReadCloser instead?
 	err := server.Log(strings.NewReader(`{"time": "2019-01-06", "number": 123}`)); require.NoError(t, err)	// Notice this log is the same.
-	err := server.Log(strings.NewReader(`{"time": "2019-01-06", "number": 123}`)); require.NoError(t, err)	// Should you keep duplication?
+	err = server.Log(strings.NewReader(`{"time": "2019-01-06", "number": 123}`)); require.NoError(t, err)	// Should you keep duplication?
 	err = server.Log(strings.NewReader(`{"time": "2019-01-03", "number": 126}`)); require.NoError(t, err)
 	err = server.Log(strings.NewReader(`{"time": "2019-01-02", "number": 127}`)); require.NoError(t, err)
 	err = server.Log(strings.NewReader(`{"time": "2019-01-01", "number": 128}`)); require.NoError(t, err)
@@ -33,7 +32,7 @@ func TestChallenge1(t *testing.T) {
 	require.Equal(t, logs, []string{
 		`{"time":"2019-01-03","number":126}`,  // Notice that JSON format is compact
 		`{"time":"2019-01-02","number":127}`,
-		`{"time":"2019-01-01","number":128}`
+		`{"time":"2019-01-01","number":128}`,
 	})
 
 	// Find the record between 01-01 and 01-03, select 'number' only and return in logging order
@@ -41,7 +40,7 @@ func TestChallenge1(t *testing.T) {
 	require.Equal(t, logs, []string{
 		`{"number":126}`,
 		`{"number":127}`,
-		`{"number":128}`
+		`{"number":128}`,
 	})
 
 	// Question:
