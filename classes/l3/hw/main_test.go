@@ -34,23 +34,72 @@ func TestChallenge1(t *testing.T) {
 	// Find the record between 01-01 and 01-03 and return in logging order.
 	// Question:
 	//		Should it return errors? If so, what kind?
-	logs, err := server.Search(map[string]string{
-		"after":  "2019-01-01",
-		"before": "2019-01-03",
+
+	logs, err := server.Search(map[string][]interface{}{
+		"time": {">", "2019-01-01", "<", "2019-01-03"},
+		//"before": "2019-01-03",
 	})
 
-	// Question:
-	//		Because this is a log system, should you trust the 'time' which users input? Should the system have its own time?
-	//		因为这是一个日志系统，你应该相信用户输入的时间吗？系统需要自己记录时间吗？ 
+	// TODO json 字段的顺序不对，但是查询到的数据是对的
+	target := []string{
+		`{"time":"2019-01-03","number":126}`, // Notice that JSON format is compact
+		`{"time":"2019-01-02","number":127}`,
+		`{"time":"2019-01-01","number":128}`,
+	}
+	require.Equal(t, logs, target)
 
-	err = server.Close()
-	require.NoError(t, err)
+	logs, err = server.Search(map[string][]interface{}{
+		"time": {"=", "2019-01-01"},
+	})
+	// TODO json 字段的顺序不对，但是查询到的数据是对的
+	target = []string{
+		`{"time":"2019-01-01","number":128}`,
+	}
+	require.Equal(t, logs, target)
 
-	// After the server is closed, it will refuse any api.
-	err = server.Log("does not matter")
-	// What should the err be?
+	logs, err = server.Search(map[string][]interface{}{
+		"number": {">", 126, "<", 127},
+		//"before": "2019-01-03",
+	})
 
-	? = server.Search(?) // So, do you think Search should return an error now?
+	// TODO json 字段的顺序不对，但是查询到的数据是对的
+	target = []string{
+		`{"time":"2019-01-03","number":126}`, // Notice that JSON format is compact
+		`{"time":"2019-01-02","number":127}`,
+	}
+	require.Equal(t, logs, target)
+
+	logs, err = server.Search(map[string][]interface{}{
+		"number": {"=", 126},
+		//"before": "2019-01-03",
+	})
+
+	// TODO json 字段的顺序不对，但是查询到的数据是对的
+	target = []string{
+		`{"time":"2019-01-03","number":126}`, // Notice that JSON format is compact
+	}
+	require.Equal(t, logs, target)
+
+	//// Find the record between 01-01 and 01-03, select 'number' only and return in logging order
+	//logs := server.Search(?)
+	//require.Equal(t, logs, []string{
+	//	`{"number":126}`,
+	//	`{"number":127}`,
+	//	`{"number":128}`,
+	//})
+	//
+	//// Question:
+	////		Because this is a log system, should you trust the 'time' which users input? Should the system have its own time?
+	////		因为这是一个日志系统，你应该相信用户输入的时间吗？系统需要自己记录时间吗？
+	//
+	//err = server.Close()
+	//require.NoError(t, err)
+	//
+	//// After the server is closed, it will refuse any api.
+	//err = server.Log("does not matter")
+	//// What should the err be?
+	//
+	//? = server.Search(?) // So, do you think Search should return an error now?
 
 	// Question:
 	//		这里我们的测试有一个明显的问题，就是没有并发测试。比如说，如果同时有 Log 和 Close 的调用会如何？
