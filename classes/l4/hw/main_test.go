@@ -34,17 +34,18 @@ func TestChallenge1(t *testing.T) {
 	// // Find the record between 01-01 and 01-03 and return in logging order.
 	// // Question:
 	// //		Should it return errors? If so, what kind?
-	var query biglog.Query
+	var query biglog.QueryFunc
 	logs, _ := server.All(
 		query.Or(
-			query.Key("time").Between("2019-01-02", "2019-01-3"),
+			query.Key("time").Between("2019-01-02", "2019-01-03"),
 			query.And(
 				query.Key("number").Equal(128),
-				query.Key("price").Exit(),
+				query.Key("price").Exist(),
 			),
-		),
+		).End(),
 	)
-	require.Equal(t, logs, []string{
+	s, _ := logs.ToStringArray()
+	require.Equal(t, s, []string{
 		`{"time":"2019-01-03","number":126}`, // Notice that JSON format is compact
 		`{"time":"2019-01-02","number":127}`,
 		`{"time": "2019-01-01","number":128,"price":30}`,
