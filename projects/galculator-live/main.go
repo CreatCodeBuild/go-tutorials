@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"bufio"
 	"os"
+	"strings"
+	"regexp"
 
 	// my
 	"./compute"
@@ -20,10 +22,15 @@ func userInput() string {
 }
 
 func main() {
+	r, _ := regexp.Compile("a*");
+
+	r.F
+
 	// terminal -> string
 	fmt.Println(userInput())
 	// string -> operants, operators
-	// input := "1 + 3 - 8 * 10 / 2"
+	input := "1 + 3 - 8 * 10 / 2"
+	//
 	operants := []int{1, 3, 8, 10, 2}
 	operators := []compute.Operator{compute.Add, compute.Sub, compute.Mul, compute.Div}
 	fmt.Println(compute.Compute(operants, operators))
