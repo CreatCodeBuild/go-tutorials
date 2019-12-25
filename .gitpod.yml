@@ -1,1 +1,5 @@
-{}
+image:
+  file: .gitpod.dockerfile
+
+tasks:
+  - init: zsh
