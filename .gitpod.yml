@@ -2,4 +2,4 @@ image:
   file: .gitpod.dockerfile
 
 tasks:
-  - init: chsh -s $(which zsh)
+  - init: zsh
