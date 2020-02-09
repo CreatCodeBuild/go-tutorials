@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 )
 
 // channel == synchronization queue == 同步队列？
@@ -33,22 +34,31 @@ func main() {
 }
 
 func receiver(ch chan task) {
+	var mutex sync.Mutex
 	var tasks []task
 
 	started := make(chan struct{})
 
 	go func(ch chan task) {
-		t := <-ch
-		tasks = append(tasks, t)
+		for {
+			t := <-ch
+			mutex.Lock()
+			tasks = append(tasks, t)
+			mutex.Unlock()
+			started <- struct{}{}
+		}
 	}(ch)
 
 	i := 0
 	for {
 		<-started
+		mutex.Lock()
 		body := <-tasks[i].body
+		mutex.Unlock()
 		i++
 		io.Copy(os.Stdout, body)
 		fmt.Println("??")
+		fmt.Print("> ")
 	}
 }
 
