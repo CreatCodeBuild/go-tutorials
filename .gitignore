@@ -4,3 +4,4 @@ main
 galculator/galculator
 *.exe
 *.test
+testdata

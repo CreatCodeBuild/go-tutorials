@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -17,6 +18,10 @@ func Serial(source, dest string) error {
 		}
 
 		cleanedSourcePath := path.Clean(filePath)
+		if runtime.GOOS == "windows" {
+			cleanedSourcePath = filepath.ToSlash(cleanedSourcePath)
+		}
+
 		destPath := filepath.Join(dest, strings.TrimPrefix(cleanedSourcePath, cleanedRootPath))
 
 		// 如果是文件夹，跳过
@@ -62,7 +67,12 @@ func Concurrent(source, dest string) error {
 		}
 
 		cleanedSourcePath := path.Clean(filePath)
+		if runtime.GOOS == "windows" {
+			cleanedSourcePath = filepath.ToSlash(cleanedSourcePath)
+		}
+
 		destPath := filepath.Join(dest, strings.TrimPrefix(cleanedSourcePath, cleanedRootPath))
+
 		// 如果是文件夹，跳过
 		if info.IsDir() {
 			return os.MkdirAll(destPath, info.Mode().Perm())
