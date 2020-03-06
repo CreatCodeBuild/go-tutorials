@@ -13,6 +13,7 @@ import (
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("request are coming")
 		time.Sleep(time.Second * time.Duration(2+rand.Int()%3))
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("慢慢慢！"))
